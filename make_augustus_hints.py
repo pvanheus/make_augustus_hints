@@ -9,7 +9,7 @@ AUGUSTUS_TYPES = ('start', 'stop', 'tss', 'tts', 'ass', 'dss', 'exonpart', 'exon
                   'intronpart', 'intron', 'CDSpart', 'CDS', 'UTRpart', 'UTR', 'irpart',
                   'nonexonpart', 'genicpart')
 
-def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=False, trim_cds=0,
+def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=True, trim_cds=15,
                   minintronlen=41, maxintronlen=350000, priority=4, source_attribute='XNT'):
     group = None
     double_trim = trim_cds * 2 # compute this here to save some extra * operations
@@ -62,12 +62,13 @@ if __name__ == '__main__':
     parser.add_argument('--max_intron_length', type=int, default=350000, help='Introns longer than this are discarded')
     parser.add_argument('--priority', '-P', type=int, default=4)
     parser.add_argument('--source', default='XNT')
-    parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=0, help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
+    parser.add_argument('--no_exons_to_CDS', default=True, action='store_false', help="Don't convert exon features to CDS")
+    parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=15, help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
     parser.add_argument('gff3_file', type=argparse.FileType())
     parser.add_argument('hints_file', type=argparse.FileType('w'))
 
     args = parser.parse_args()
-    gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=True, 
+    gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=args.exons_to_CDS, 
                   trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
                   priority=args.priority, source_attribute=args.source)
 
