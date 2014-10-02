@@ -51,12 +51,9 @@ def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=False, trim_c
         attributes['source'] = source_attribute
         if hint_type == 'dna':
             attributes['source'] = 'E'
-        elif hint_type == 'protein'
+        elif hint_type == 'protein':
             attributes['source'] = 'P'
-        out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes])
-
-
-
+        out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert a GFF3 file into augustus hints format')
@@ -69,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('gff3_file', type=argparse.FileType())
     parser.add_argument('hints_file', type=argparse.FileType('w'))
 
-    args = parser.parse_arguments()
+    args = parser.parse_args()
     gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=True, 
                   trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.maxintronlen,
                   priority=args.priority, source_attribute=args.source)
