@@ -36,7 +36,7 @@ def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=False, trim_c
         elif seq_type == 'intron' and (feature_length < minintronlen or feature_length > maxintronlen):
             # skip too short or too long introns
             continue
-        if trim_cds:
+        if seq_type == 'CDS' and trim_cds:
             # if feature is too short (less than 2 * trim_cds), mark new feature in middle of old feature
             seq_type += 'part'
             if feature_length < double_trim:
