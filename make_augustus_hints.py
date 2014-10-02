@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=True, 
-                  trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.maxintronlen,
+                  trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
                   priority=args.priority, source_attribute=args.source)
 
 
