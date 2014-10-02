@@ -62,13 +62,13 @@ if __name__ == '__main__':
     parser.add_argument('--max_intron_length', type=int, default=350000, help='Introns longer than this are discarded')
     parser.add_argument('--priority', '-P', type=int, default=4)
     parser.add_argument('--source', default='XNT')
-    parser.add_argument('--no_exons_to_CDS', default=True, action='store_false', help="Don't convert exon features to CDS")
+    parser.add_argument('--no_exons_to_CDS', default=False, action='store_true', help="Don't convert exon features to CDS")
     parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=15, help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
     parser.add_argument('gff3_file', type=argparse.FileType())
     parser.add_argument('hints_file', type=argparse.FileType('w'))
 
     args = parser.parse_args()
-    gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=args.exons_to_CDS, 
+    gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=(not args.no_exons_to_CDS), 
                   trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
                   priority=args.priority, source_attribute=args.source)
 
