@@ -48,7 +48,7 @@ def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=False, trim_c
             attributes['grp'] = group
         attributes['priority'] = priority
         source = 'xnt2h'
-        attributes['source'] = source_attribute
+        attributes['src'] = source_attribute
         if hint_type == 'dna':
             attributes['source'] = 'E'
         elif hint_type == 'protein':
