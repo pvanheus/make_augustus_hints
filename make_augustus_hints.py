@@ -50,6 +50,7 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
         attributes['priority'] = priority
         source = 'xnt2h'
         attributes['src'] = source_attribute
+        attributes['source'] = hint_type
         out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes]))
 
 if __name__ == '__main__':
