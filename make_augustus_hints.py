@@ -10,7 +10,7 @@ AUGUSTUS_TYPES = ('start', 'stop', 'tss', 'tts', 'ass', 'dss', 'exonpart', 'exon
                   'nonexonpart', 'genicpart')
 
 def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cds=15,
-                  minintronlen=41, maxintronlen=350000, priority=4, source_attribute='XNT'):
+                  minintronlen=41, maxintronlen=350000, priority=4):
     group = None
     double_trim = trim_cds * 2 # compute this here to save some extra * operations
     for line in in_file:
@@ -49,8 +49,9 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
             attributes['grp'] = group
         attributes['priority'] = priority
         source = 'xnt2h'
-        attributes['src'] = source_attribute
-        attributes['source'] = hint_type
+        attributes['src'] = hint_type
+        if 'source' in attributes:
+            del attributes['source'] # remove the source= attribute
         out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes]))
 
 if __name__ == '__main__':
@@ -68,6 +69,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=(not args.no_exons_to_CDS), 
                   trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
-                  priority=args.priority, source_attribute=args.source)
+                  priority=args.priority)
 
 
