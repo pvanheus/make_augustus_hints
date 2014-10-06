@@ -9,7 +9,7 @@ AUGUSTUS_TYPES = ('start', 'stop', 'tss', 'tts', 'ass', 'dss', 'exonpart', 'exon
                   'intronpart', 'intron', 'CDSpart', 'CDS', 'UTRpart', 'UTR', 'irpart',
                   'nonexonpart', 'genicpart')
 
-def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=True, trim_cds=15,
+def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cds=15,
                   minintronlen=41, maxintronlen=350000, priority=4, source_attribute='XNT'):
     group = None
     double_trim = trim_cds * 2 # compute this here to save some extra * operations
@@ -26,9 +26,10 @@ def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=True, trim_cd
         assert start <= end, "start not <= end in GFF line: {}\n".format(line)
         feature_length = end - start + 1
         attributes = gff_utils.parse_gff_attributes(attr_string)
-        if seq_type == 'transcript':
-            group = attributes['ID']
-        elif seq_type not in AUGUSTUS_TYPES:
+        if seq_type not in AUGUSTUS_TYPES:
+            if seq_type == 'transcript':
+                # capture the "group id"
+                group = attributes['ID']
             # skip features that AUGUSTUS doesn't care about
             continue
         elif exons_to_CDS and seq_type == 'exon':
@@ -49,15 +50,11 @@ def gff3_to_hints(in_file, out_file, hint_type='dna', exons_to_CDS=True, trim_cd
         attributes['priority'] = priority
         source = 'xnt2h'
         attributes['src'] = source_attribute
-        if hint_type == 'dna':
-            attributes['source'] = 'E'
-        elif hint_type == 'protein':
-            attributes['source'] = 'P'
         out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert a GFF3 file into augustus hints format')
-    parser.add_argument('--hint_type', '-S', default='dna', choices=('dna', 'protein'), help='Set hint type: dna (E) or protein (P)')
+    parser.add_argument('--hint_type', '-S', default='XNT', help='Set hint type, as per extrinsic config file')
     parser.add_argument('--min_intron_length', type=int, default=41, help='Introns shorter than this length are discarded')
     parser.add_argument('--max_intron_length', type=int, default=350000, help='Introns longer than this are discarded')
     parser.add_argument('--priority', '-P', type=int, default=4)
