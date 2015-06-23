@@ -10,9 +10,11 @@ AUGUSTUS_TYPES = ('start', 'stop', 'tss', 'tts', 'ass', 'dss', 'exonpart', 'exon
                   'nonexonpart', 'genicpart')
 
 def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cds=15,
-                  minintronlen=41, maxintronlen=350000, priority=4):
+                  minintronlen=41, maxintronlen=350000, priority=4,
+                  min_transcript_len=500, skip_predicted_proteins=False):
     group = None
     double_trim = trim_cds * 2 # compute this here to save some extra * operations
+    transcripts_to_skip = set()
     for line in in_file:
         if line.startswith('#'):
             continue
@@ -30,7 +32,15 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
             if seq_type == 'transcript':
                 # capture the "group id"
                 group = attributes['ID']
+                # skip the transcript if it is too short or it is a Refseq predicted protein and 
+                # we're skipping those
+                if ((skip_predicted_proteins and group.startswith('XP_')) 
+                        or ((end - start) < min_transcript_len)):
+                    transcripts_to_skip.add(group)
             # skip features that AUGUSTUS doesn't care about
+            continue
+        elif 'Parent' in attributes and attributes['Parent'] in transcripts_to_skip:
+            # skip all features that are children of transcripts we want to skip
             continue
         elif exons_to_CDS and seq_type == 'exon':
             seq_type = 'CDS'
@@ -63,12 +73,16 @@ if __name__ == '__main__':
     parser.add_argument('--source', default='XNT')
     parser.add_argument('--no_exons_to_CDS', default=False, action='store_true', help="Don't convert exon features to CDS")
     parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=15, help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
+    parser.add_argument('--min_transcript_length', type=int, default=500, help='Minimum total transcript length to accept')
+    parser.add_argument('--skip_predicted_proteins', '-N', default=False, action='store_true',
+                            help='Skip Refseq proteins whose names start with XP_')
     parser.add_argument('gff3_file', type=argparse.FileType())
     parser.add_argument('hints_file', type=argparse.FileType('w'))
 
     args = parser.parse_args()
     gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=(not args.no_exons_to_CDS), 
                   trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
-                  priority=args.priority)
+                  priority=args.priority, min_transcript_len=args.min_transcript_length, 
+                  skip_predicted_proteins=args.skip_predicted_proteins)
 
 
