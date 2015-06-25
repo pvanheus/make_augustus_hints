@@ -9,7 +9,7 @@ AUGUSTUS_TYPES = ('start', 'stop', 'tss', 'tts', 'ass', 'dss', 'exonpart', 'exon
                   'intronpart', 'intron', 'CDSpart', 'CDS', 'UTRpart', 'UTR', 'irpart',
                   'nonexonpart', 'genicpart')
 
-def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cds=15,
+def gff3_to_hints(in_file, out_file, out_gff_file=None, hint_type='XNT', exons_to_CDS=True, trim_cds=15,
                   minintronlen=41, maxintronlen=350000, priority=4,
                   min_transcript_len=500, skip_predicted_proteins=False):
     group = None
@@ -17,10 +17,11 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
     transcripts_to_skip = set()
     for line in in_file:
         if line.startswith('#'):
+            if out_gff_file is not None:
+                out_gff_file.write(line)
             continue
-        line = line.strip()
-        fields = line.split('\t')
-        assert len(fields) == 9, "Invalid GFF line: {}\n".format(line)
+        fields = line.strip().split('\t')
+        assert len(fields) == 9, "Invalid GFF line: {}\n".format(line.strip())
         (ref, source, seq_type, start, end, score, strand, phase, attr_string) = fields
         start = int(start)
         end = int(end)
@@ -37,6 +38,8 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
                 if ((skip_predicted_proteins and group.startswith('XP_')) 
                         or ((end - start) < min_transcript_len)):
                     transcripts_to_skip.add(group)
+                else:
+                    out_gff_file.write(line)
             # skip features that AUGUSTUS doesn't care about
             continue
         elif 'Parent' in attributes and attributes['Parent'] in transcripts_to_skip:
@@ -61,28 +64,40 @@ def gff3_to_hints(in_file, out_file, hint_type='XNT', exons_to_CDS=True, trim_cd
         source = 'xnt2h'
         attributes['src'] = hint_type
         if 'source' in attributes:
-            del attributes['source'] # remove the source= attribute
-        out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type, start, end, score, strand, phase, attributes]))
+            del attributes['source']  # remove the source= attribute
+        out_file.write(gff_utils.gff_string_from_list([ref, source, seq_type,
+                       start, end, score, strand, phase, attributes]))
+        if out_gff_file is not None:
+            out_gff_file.write(line)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert a GFF3 file into augustus hints format')
-    parser.add_argument('--hint_type', '-S', default='XNT', help='Set hint type, as per extrinsic config file')
-    parser.add_argument('--min_intron_length', type=int, default=41, help='Introns shorter than this length are discarded')
-    parser.add_argument('--max_intron_length', type=int, default=350000, help='Introns longer than this are discarded')
+    parser.add_argument('--hint_type', '-S', default='XNT',
+                        help='Set hint type, as per extrinsic config file')
+    parser.add_argument('--min_intron_length', type=int, default=41,
+                        help='Introns shorter than this length are discarded')
+    parser.add_argument('--max_intron_length', type=int, default=350000,
+                        help='Introns longer than this are discarded')
     parser.add_argument('--priority', '-P', type=int, default=4)
     parser.add_argument('--source', default='XNT')
-    parser.add_argument('--no_exons_to_CDS', default=False, action='store_true', help="Don't convert exon features to CDS")
-    parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=15, help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
-    parser.add_argument('--min_transcript_length', type=int, default=500, help='Minimum total transcript length to accept')
+    parser.add_argument('--no_exons_to_CDS', default=False, action='store_true',
+                        help="Don't convert exon features to CDS")
+    parser.add_argument('--CDSpart_cutoff', '-C', type=int, default=15,
+                        help='This many bases are cutoff off the start an end of each CDS to make a CDSpart')
+    parser.add_argument('--min_transcript_length', type=int, default=500,
+                        help='Minimum total transcript length to accept')
     parser.add_argument('--skip_predicted_proteins', '-N', default=False, action='store_true',
                             help='Skip Refseq proteins whose names start with XP_')
     parser.add_argument('gff3_file', type=argparse.FileType())
     parser.add_argument('hints_file', type=argparse.FileType('w'))
+    parser.add_argument('filtered_gff_file', type=argparse.FileType('w'),
+                        nargs='?', default=None,
+                        help='GFF3 format file to write features selected as hints to')
 
     args = parser.parse_args()
-    gff3_to_hints(args.gff3_file, args.hints_file, hint_type=args.hint_type, exons_to_CDS=(not args.no_exons_to_CDS), 
-                  trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length, maxintronlen=args.max_intron_length,
-                  priority=args.priority, min_transcript_len=args.min_transcript_length, 
+    gff3_to_hints(args.gff3_file, args.hints_file, args.filtered_gff_file,
+                  hint_type=args.hint_type, exons_to_CDS=(not args.no_exons_to_CDS),
+                  trim_cds=args.CDSpart_cutoff, minintronlen=args.min_intron_length,
+                  maxintronlen=args.max_intron_length,
+                  priority=args.priority, min_transcript_len=args.min_transcript_length,
                   skip_predicted_proteins=args.skip_predicted_proteins)
-
-
